@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, BookOpen, User, PenLine, Plus, X, Image as ImageIcon, Save, Edit2, Trash2, Library } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen, User, PenLine, Plus, X, Image as ImageIcon, Save, Edit2, Trash2, Library, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface Book {
@@ -121,7 +121,7 @@ const INITIAL_BOOKS: Book[] = [
       "O alerta veio numa terça-feira chuvosa. Alguém estava tentando impedir a invenção da internet nos anos 80. Arthur ajustou seu relógio e saltou.",
       "Ele aterrissou em uma garagem bagunçada na Califórnia. Dois jovens trabalhavam em computadores primitivos. Mas havia um terceiro homem, escondido nas sombras, segurando um dispositivo estranho.",
       "Arthur agiu rápido. Ele desarmou o intruso antes que ele pudesse ativar o disruptor. O homem era um viajante do futuro, um anarquista que acreditava que a tecnologia havia arruinado a humanidade.",
-      "'Você não entende!', gritou o homem enquanto era algemado. 'Isso é o começo do fim!'. Arthur apenas balançou a cabeça. 'O futuro não está escrito', disse ele. 'Nós o escrevemos todos os dias.'",
+      "Vocês não entendem!', gritou o homem enquanto era algemado. 'Isso é o começo do fim!'. Arthur apenas balançou a cabeça. 'O futuro não está escrito', disse ele. 'Nós o escrevemos todos os dias.'",
       "Ele apagou a memória dos jovens inventores sobre o incidente e voltou para seu tempo. O mundo continuava o mesmo, a internet funcionava, e ninguém sabia o quão perto estiveram de perder tudo."
     ].join("\n\n"),
     image: "https://picsum.photos/seed/book7/200/300"
@@ -207,7 +207,7 @@ const Section = ({
         })
       ) : (
         <div className="px-4 py-8 text-center w-full text-gray-400 text-sm italic">
-          Nenhum livro aqui ainda...
+          Nenhum livro encontrado...
         </div>
       )}
     </div>
@@ -229,6 +229,10 @@ export default function App() {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [view, setView] = useState<'home' | 'shelf' | 'write' | 'profile'>('home');
+  
+  // Search State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
 
   // Save to localStorage
   useEffect(() => {
@@ -322,6 +326,15 @@ export default function App() {
     return story.split('\n\n');
   };
 
+  // Filtering Logic
+  const filteredBooks = books.filter(book => {
+    const matchesSearch = book.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesLetter = selectedLetter ? book.title.toUpperCase().startsWith(selectedLetter) : true;
+    return matchesSearch && matchesLetter;
+  });
+
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900 max-w-md mx-auto relative pb-20">
       {/* Header */}
@@ -335,8 +348,48 @@ export default function App() {
 
       {view === 'home' ? (
         <>
+          {/* Search & Filter */}
+          <div className="px-4 py-4 sticky top-[68px] bg-white z-10 border-b border-gray-100">
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input 
+                type="text" 
+                placeholder="Buscar livros..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 transition-colors"
+              />
+            </div>
+            
+            <div className="flex space-x-2 overflow-x-auto no-scrollbar pb-2">
+              <button
+                onClick={() => setSelectedLetter(null)}
+                className={`flex-none px-3 py-1 rounded-full text-xs font-bold transition-colors ${
+                  selectedLetter === null 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                }`}
+              >
+                Todos
+              </button>
+              {alphabet.map(letter => (
+                <button
+                  key={letter}
+                  onClick={() => setSelectedLetter(selectedLetter === letter ? null : letter)}
+                  className={`flex-none w-8 h-8 rounded-full text-xs font-bold flex items-center justify-center transition-colors ${
+                    selectedLetter === letter 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                  }`}
+                >
+                  {letter}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Tabs */}
-          <nav className="flex overflow-x-auto no-scrollbar border-b border-gray-100 px-4 sticky top-[68px] bg-white z-10">
+          <nav className="flex overflow-x-auto no-scrollbar border-b border-gray-100 px-4 bg-white">
             {tabs.map((tab) => (
               <button
                 key={tab}
@@ -360,18 +413,19 @@ export default function App() {
           <main className="pt-6">
             <Section 
               title="Livros" 
-              books={books} 
+              books={filteredBooks} 
               onBookClick={handleBookClick} 
               bookProgress={bookProgress}
             />
             <Section 
               title="Melhores" 
-              books={books.slice().reverse()} 
+              books={filteredBooks.slice().reverse()} 
               onBookClick={handleBookClick} 
               bookProgress={bookProgress}
             />
           </main>
         </>
+
       ) : view === 'shelf' ? (
         /* Shelf View */
         <main className="p-6 min-h-screen pb-24">
