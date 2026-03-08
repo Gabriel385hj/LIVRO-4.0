@@ -1,0 +1,5 @@
+{
+  "name": "BookStore App",
+  "description": "A mobile-first book store interface inspired by Google Play Books.",
+  "requestFramePermissions": []
+}
