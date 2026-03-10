@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, BookOpen, User, PenLine, Plus, X, Image as ImageIcon, Save, Edit2, Trash2, Library, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen, User, PenLine, Plus, X, Image as ImageIcon, Save, Edit2, Trash2, Library, Search, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface Book {
@@ -17,6 +17,14 @@ interface Book {
 interface UserProfile {
   name: string;
   bio: string;
+}
+
+interface Review {
+  id: number;
+  userName: string;
+  rating: number;
+  comment: string;
+  date: string;
 }
 
 const INITIAL_BOOKS: Book[] = [
@@ -145,10 +153,11 @@ interface BookCardProps {
   book: Book;
   onClick: () => void;
   progress: number;
+  rating: number;
   key?: React.Key | number | string;
 }
 
-const BookCard = ({ book, onClick, progress }: BookCardProps) => (
+const BookCard = ({ book, onClick, progress, rating }: BookCardProps) => (
   <div className="flex-none w-32 mr-4 cursor-pointer group" onClick={onClick}>
     <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-sm bg-gray-100 hover:shadow-md transition-shadow">
       <img 
@@ -161,6 +170,12 @@ const BookCard = ({ book, onClick, progress }: BookCardProps) => (
       {progress > 0 && (
         <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full">
           <span className="text-[10px] font-bold text-white">{progress}%</span>
+        </div>
+      )}
+      {rating > 0 && (
+        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full flex items-center space-x-1">
+          <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+          <span className="text-[10px] font-bold text-white">{rating.toFixed(1)}</span>
         </div>
       )}
     </div>
@@ -176,12 +191,14 @@ const Section = ({
   title, 
   books, 
   onBookClick, 
-  bookProgress
+  bookProgress,
+  reviews
 }: { 
   title: string; 
   books: Book[]; 
   onBookClick: (book: Book) => void;
   bookProgress: Record<number, number>;
+  reviews: Record<number, Review[]>;
 }) => (
   <div className="mb-8">
     <div className="flex items-center justify-between px-4 mb-4">
@@ -196,12 +213,18 @@ const Section = ({
             ? Math.round(((currentPage + 1) / totalPages) * 100) 
             : 0;
 
+          const bookReviews = reviews[book.id] || [];
+          const averageRating = bookReviews.length > 0
+            ? bookReviews.reduce((sum, r) => sum + r.rating, 0) / bookReviews.length
+            : 0;
+
           return (
             <BookCard 
               key={book.id} 
               book={book} 
               onClick={() => onBookClick(book)} 
               progress={progress}
+              rating={averageRating}
             />
           );
         })
@@ -225,6 +248,11 @@ export default function App() {
     return savedProgress ? JSON.parse(savedProgress) : {};
   });
 
+  const [reviews, setReviews] = useState<Record<number, Review[]>>(() => {
+    const savedReviews = localStorage.getItem('book-reviews');
+    return savedReviews ? JSON.parse(savedReviews) : {};
+  });
+
   const [activeTab, setActiveTab] = useState('E-books');
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
@@ -234,6 +262,11 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
 
+  // Reviews State
+  const [showReviews, setShowReviews] = useState(false);
+  const [newRating, setNewRating] = useState(0);
+  const [newReviewComment, setNewReviewComment] = useState('');
+
   // Save to localStorage
   useEffect(() => {
     localStorage.setItem('my-books', JSON.stringify(books));
@@ -242,6 +275,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('book-progress', JSON.stringify(bookProgress));
   }, [bookProgress]);
+
+  useEffect(() => {
+    localStorage.setItem('book-reviews', JSON.stringify(reviews));
+  }, [reviews]);
 
   // Profile state
   const [profile, setProfile] = useState<UserProfile>({
@@ -261,6 +298,9 @@ export default function App() {
   const handleBookClick = (book: Book) => {
     setSelectedBook(book);
     setCurrentPage(bookProgress[book.id] || 0);
+    setShowReviews(false);
+    setNewRating(0);
+    setNewReviewComment('');
   };
 
   const handlePageChange = (newPage: number) => {
@@ -318,6 +358,26 @@ export default function App() {
   const handleSaveProfile = () => {
     setProfile({ name: editName, bio: editBio });
     setIsEditingProfile(false);
+  };
+
+  const handleAddReview = () => {
+    if (!selectedBook || newRating === 0 || !newReviewComment.trim()) return;
+
+    const newReview: Review = {
+      id: Date.now(),
+      userName: profile.name,
+      rating: newRating,
+      comment: newReviewComment.trim(),
+      date: new Date().toLocaleDateString('pt-BR')
+    };
+
+    setReviews(prev => ({
+      ...prev,
+      [selectedBook.id]: [newReview, ...(prev[selectedBook.id] || [])]
+    }));
+
+    setNewRating(0);
+    setNewReviewComment('');
   };
 
   const tabs = ['E-books', 'Gêneros'];
@@ -416,12 +476,14 @@ export default function App() {
               books={filteredBooks} 
               onBookClick={handleBookClick} 
               bookProgress={bookProgress}
+              reviews={reviews}
             />
             <Section 
               title="Melhores" 
               books={filteredBooks.slice().reverse()} 
               onBookClick={handleBookClick} 
               bookProgress={bookProgress}
+              reviews={reviews}
             />
           </main>
         </>
@@ -440,6 +502,11 @@ export default function App() {
                   ? Math.round(((currentPage + 1) / totalPages) * 100) 
                   : 0;
                 
+                const bookReviews = reviews[book.id] || [];
+                const averageRating = bookReviews.length > 0
+                  ? bookReviews.reduce((sum, r) => sum + r.rating, 0) / bookReviews.length
+                  : 0;
+
                 return (
                   <div key={book.id} onClick={() => handleBookClick(book)} className="cursor-pointer group">
                     <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-sm bg-gray-100 hover:shadow-md transition-shadow">
@@ -453,6 +520,12 @@ export default function App() {
                        {progress > 0 && (
                           <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full">
                             <span className="text-[10px] font-bold text-white">{progress}%</span>
+                          </div>
+                        )}
+                       {averageRating > 0 && (
+                          <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full flex items-center space-x-1">
+                            <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                            <span className="text-[10px] font-bold text-white">{averageRating.toFixed(1)}</span>
                           </div>
                         )}
                     </div>
@@ -687,64 +760,126 @@ export default function App() {
                   Página {currentPage + 1} de {getPages(selectedBook.story).length}
                 </span>
               </div>
-              <div className="w-10" /> {/* Spacer for alignment */}
+              <button onClick={() => setShowReviews(!showReviews)} className="p-2 rounded-full hover:bg-gray-100">
+                <Star className={`w-6 h-6 ${showReviews ? 'text-blue-600 fill-blue-600' : 'text-yellow-400'}`} />
+              </button>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-8 font-serif">
-              <motion.div
-                key={currentPage}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="min-h-full flex flex-col"
-              >
-                {currentPage === 0 && (
-                  <div className="flex justify-center mb-12">
-                    <img 
-                      src={selectedBook.image} 
-                      alt={selectedBook.title} 
-                      className="w-48 aspect-[2/3] object-cover rounded-2xl shadow-2xl rotate-2"
-                      referrerPolicy="no-referrer"
-                    />
-                  </div>
-                )}
+            {showReviews ? (
+              <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold font-sans">Avaliações</h2>
+                  <button onClick={() => setShowReviews(false)} className="text-sm font-bold text-blue-600">Voltar à leitura</button>
+                </div>
                 
-                <p className="text-gray-800 leading-relaxed text-2xl first-letter:text-5xl first-letter:font-bold first-letter:mr-3 first-letter:float-left">
-                  {getPages(selectedBook.story)[currentPage]}
-                </p>
-              </motion.div>
-            </div>
+                {/* Form to add review */}
+                <div className="bg-white p-4 rounded-2xl shadow-sm mb-6">
+                  <h3 className="text-sm font-bold mb-3">Deixe sua avaliação</h3>
+                  <div className="flex space-x-2 mb-3">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button key={star} onClick={() => setNewRating(star)}>
+                        <Star className={`w-6 h-6 ${newRating >= star ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    value={newReviewComment}
+                    onChange={(e) => setNewReviewComment(e.target.value)}
+                    placeholder="O que você achou deste livro?"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 mb-3 resize-none"
+                    rows={3}
+                  />
+                  <button 
+                    onClick={handleAddReview}
+                    disabled={newRating === 0 || !newReviewComment.trim()}
+                    className="w-full py-2 bg-blue-600 text-white rounded-xl font-bold text-sm disabled:opacity-50"
+                  >
+                    Enviar Avaliação
+                  </button>
+                </div>
+
+                {/* List of reviews */}
+                <div className="space-y-4">
+                  {(reviews[selectedBook.id] || []).map(review => (
+                    <div key={review.id} className="bg-white p-4 rounded-2xl shadow-sm">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <span className="font-bold text-sm">{review.userName}</span>
+                          <span className="text-xs text-gray-400 block">{review.date}</span>
+                        </div>
+                        <div className="flex">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} className={`w-3 h-3 ${i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'}`} />
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-700">{review.comment}</p>
+                    </div>
+                  ))}
+                  {(!reviews[selectedBook.id] || reviews[selectedBook.id].length === 0) && (
+                    <p className="text-center text-gray-400 text-sm py-4">Nenhuma avaliação ainda. Seja o primeiro!</p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto p-8 font-serif">
+                <motion.div
+                  key={currentPage}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="min-h-full flex flex-col"
+                >
+                  {currentPage === 0 && (
+                    <div className="flex justify-center mb-12">
+                      <img 
+                        src={selectedBook.image} 
+                        alt={selectedBook.title} 
+                        className="w-48 aspect-[2/3] object-cover rounded-2xl shadow-2xl rotate-2"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                  )}
+                  
+                  <p className="text-gray-800 leading-relaxed text-2xl first-letter:text-5xl first-letter:font-bold first-letter:mr-3 first-letter:float-left">
+                    {getPages(selectedBook.story)[currentPage]}
+                  </p>
+                </motion.div>
+              </div>
+            )}
 
             {/* Pagination Controls */}
-            <div className="p-6 border-t border-gray-100 flex items-center justify-between bg-white">
-              <button 
-                disabled={currentPage === 0}
-                onClick={() => handlePageChange(currentPage - 1)}
-                className="flex items-center space-x-2 text-gray-400 disabled:opacity-20 font-bold uppercase text-xs tracking-widest"
-              >
-                <ChevronLeft className="w-5 h-5" />
-                <span>Anterior</span>
-              </button>
-              
-              <div className="flex space-x-1">
-                {Array.from({ length: Math.min(5, getPages(selectedBook.story).length) }).map((_, i) => (
-                  <div 
-                    key={i} 
-                    className={`h-1 rounded-full transition-all ${
-                      Math.floor(currentPage / 3.2) === i ? 'w-4 bg-blue-600' : 'w-1 bg-gray-200'
-                    }`} 
-                  />
-                ))}
-              </div>
+            {!showReviews && (
+              <div className="p-6 border-t border-gray-100 flex items-center justify-between bg-white">
+                <button 
+                  disabled={currentPage === 0}
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  className="flex items-center space-x-2 text-gray-400 disabled:opacity-20 font-bold uppercase text-xs tracking-widest"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                  <span>Anterior</span>
+                </button>
+                
+                <div className="flex space-x-1">
+                  {Array.from({ length: Math.min(5, getPages(selectedBook.story).length) }).map((_, i) => (
+                    <div 
+                      key={i} 
+                      className={`h-1 rounded-full transition-all ${
+                        Math.floor(currentPage / 3.2) === i ? 'w-4 bg-blue-600' : 'w-1 bg-gray-200'
+                      }`} 
+                    />
+                  ))}
+                </div>
 
-              <button 
-                disabled={currentPage === getPages(selectedBook.story).length - 1}
-                onClick={() => handlePageChange(currentPage + 1)}
-                className="flex items-center space-x-2 text-blue-600 disabled:opacity-20 font-bold uppercase text-xs tracking-widest"
-              >
-                <span>Próxima</span>
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
+                <button 
+                  disabled={currentPage === getPages(selectedBook.story).length - 1}
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  className="flex items-center space-x-2 text-blue-600 disabled:opacity-20 font-bold uppercase text-xs tracking-widest"
+                >
+                  <span>Próxima</span>
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
