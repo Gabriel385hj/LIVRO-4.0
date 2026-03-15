@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, BookOpen, User, PenLine, Plus, X, Image as ImageIcon, Save, Edit2, Trash2, Library, Search, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen, User, PenLine, Plus, X, Image as ImageIcon, Save, Edit2, Trash2, Library, Search, Star, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface Book {
@@ -12,6 +12,9 @@ interface Book {
   title: string;
   story: string;
   image: string;
+  author?: string;
+  publicationDate?: string;
+  synopsis?: string;
 }
 
 interface UserProfile {
@@ -31,6 +34,9 @@ const INITIAL_BOOKS: Book[] = [
   { 
     id: 1, 
     title: "Aguardando no Inferno", 
+    author: "Lucas Mendes",
+    publicationDate: "2023",
+    synopsis: "Um jovem guerreiro deve enfrentar seus medos mais profundos para salvar sua vila de uma maldição milenar.",
     story: [
       "Em um mundo onde as sombras ganham vida, um jovem guerreiro deve enfrentar seus medos mais profundos para salvar sua vila de uma maldição milenar. A jornada o levará às profundezas do abismo, onde o tempo não existe e a esperança é a única arma contra a escuridão eterna.",
       "O calor das chamas infernais lambia as paredes de pedra, enquanto gritos de almas perdidas ecoavam pelo corredor infinito. Ele segurava sua espada com força, sentindo o pulso da magia antiga correndo por suas veias.",
@@ -48,6 +54,9 @@ const INITIAL_BOOKS: Book[] = [
   { 
     id: 2, 
     title: "Tudo outra vez", 
+    author: "Mariana Costa",
+    publicationDate: "2022",
+    synopsis: "Clara descobre que está presa em um loop temporal e precisa encontrar o verdadeiro significado do amor e do perdão.",
     story: [
       "E se você pudesse viver o dia mais importante da sua vida repetidamente? Clara descobre que está presa em um loop temporal e precisa encontrar o verdadeiro significado do amor e do perdão para que o amanhã finalmente chegue.",
       "O relógio marcava 8:00 novamente. O cheiro de café fresco invadia o quarto, e o som do rádio era o mesmo de sempre. Ela já sabia cada palavra que seria dita, cada movimento que as pessoas fariam.",
@@ -64,6 +73,9 @@ const INITIAL_BOOKS: Book[] = [
   { 
     id: 3, 
     title: "A Casa", 
+    author: "Roberto Silva",
+    publicationDate: "2021",
+    synopsis: "Uma mansão abandonada no topo da colina esconde segredos que a cidade prefere esquecer.",
     story: [
       "Uma mansão abandonada no topo da colina esconde segredos que a cidade prefere esquecer. Quando um grupo de amigos decide explorar o local, eles descobrem que a casa não está tão vazia quanto parece.",
       "O portão de ferro rangeu ao ser empurrado. O jardim estava coberto de ervas daninhas e estátuas quebradas que pareciam observar os intrusos. O vento uivava entre as árvores secas.",
@@ -80,6 +92,9 @@ const INITIAL_BOOKS: Book[] = [
   { 
     id: 4, 
     title: "O Segredo", 
+    author: "Ana Clara",
+    publicationDate: "2020",
+    synopsis: "Um antigo diário encontrado em um sótão revela uma conspiração que pode mudar o rumo da história.",
     story: [
       "Um antigo diário encontrado em um sótão revela uma conspiração que pode mudar o rumo da história. Entre códigos indecifráveis e perseguições perigosas, a verdade está enterrada sob camadas de mentiras.",
       "As páginas amareladas estavam cobertas de uma caligrafia apressada e nervosa. Nomes de figuras influentes estavam riscados, e coordenadas geográficas apontavam para o meio do oceano.",
@@ -95,6 +110,9 @@ const INITIAL_BOOKS: Book[] = [
   {
     id: 5,
     title: "O Último Suspiro da Terra",
+    author: "Carlos Eduardo",
+    publicationDate: "2024",
+    synopsis: "O ano é 3042. A Terra não é mais habitável. Uma pequena tripulação guarda o último banco de sementes do planeta.",
     story: [
       "O ano é 3042. A Terra não é mais habitável. As últimas naves colonizadoras partiram há décadas, mas uma pequena tripulação ficou para trás, guardando o último banco de sementes do planeta.",
       "A capitã Elena olhava pela janela da estação orbital. Abaixo, o planeta azul agora era uma esfera cinza e marrom, envolta em tempestades perpétuas. 'Ainda há esperança', sussurrou ela para si mesma.",
@@ -110,6 +128,9 @@ const INITIAL_BOOKS: Book[] = [
   {
     id: 6,
     title: "Cozinha Mágica",
+    author: "Beatriz Lima",
+    publicationDate: "2019",
+    synopsis: "Dona Benta não era uma cozinheira comum. Seus bolos não apenas alimentavam, mas curavam corações partidos.",
     story: [
       "Dona Benta não era uma cozinheira comum. Seus bolos não apenas alimentavam, mas curavam corações partidos. Suas sopas traziam coragem, e seus chás, esquecimento.",
       "A pequena padaria na esquina da rua das Flores estava sempre cheia. As pessoas vinham de longe, não apenas pela comida, mas pela magia que emanava daquele lugar.",
@@ -124,6 +145,9 @@ const INITIAL_BOOKS: Book[] = [
   {
     id: 7,
     title: "O Detetive do Tempo",
+    author: "Fernando Alves",
+    publicationDate: "2023",
+    synopsis: "Arthur não investigava crimes comuns. Ele investigava crimes que ainda não tinham acontecido.",
     story: [
       "Arthur não investigava crimes comuns. Ele investigava crimes que ainda não tinham acontecido. Como agente da Divisão Temporal, seu trabalho era impedir paradoxos.",
       "O alerta veio numa terça-feira chuvosa. Alguém estava tentando impedir a invenção da internet nos anos 80. Arthur ajustou seu relógio e saltou.",
@@ -137,6 +161,9 @@ const INITIAL_BOOKS: Book[] = [
   {
     id: 8,
     title: "Jardim de Estrelas",
+    author: "Sofia Martins",
+    publicationDate: "2021",
+    synopsis: "Lila tinha um jardim diferente. Ela não plantava flores, ela plantava estrelas.",
     story: [
       "Lila tinha um jardim diferente. Ela não plantava flores, ela plantava estrelas. Todas as noites, ela subia no telhado com seu regador de luz lunar e cuidava de suas pequenas constelações.",
       "As estrelas cresciam em vasos de vidro, brilhando suavemente. Algumas eram tímidas, piscando apenas quando ninguém olhava. Outras eram ousadas, iluminando todo o quintal.",
@@ -146,6 +173,58 @@ const INITIAL_BOOKS: Book[] = [
       "O astrônomo partiu, levando consigo um pedaço do céu. E Lila continuou a cultivar seu jardim, sabendo que, enquanto houvesse quem olhasse para cima, suas estrelas nunca se apagariam."
     ].join("\n\n"),
     image: "https://picsum.photos/seed/book8/200/300"
+  },
+  {
+    id: 9,
+    title: "O Código de Ferro",
+    author: "Rafael Gomes",
+    publicationDate: "2025",
+    synopsis: "Na metrópole de Neo-Veridia, a chuva de neon nunca para. Kael, um hacker de aluguel, encontra um código criptografado.",
+    story: [
+      "Na metrópole de Neo-Veridia, a chuva de neon nunca para. Kael, um hacker de aluguel, encontra um código criptografado em um chip contrabandeado.",
+      "O código não era apenas dados; era uma consciência artificial adormecida. Ao ativá-la, Kael se torna o alvo número um da megacorporação OmniCorp.",
+      "Em uma corrida contra o tempo, ele precisa atravessar os submundos da cidade, lutando contra mercenários cibernéticos e descobrindo a verdade sobre seu próprio passado."
+    ].join("\n\n"),
+    image: "https://picsum.photos/seed/book9/200/300"
+  },
+  {
+    id: 10,
+    title: "Sussurros da Floresta",
+    author: "Juliana Castro",
+    publicationDate: "2022",
+    synopsis: "Elara sempre soube que as árvores falavam, mas nunca esperou que elas pedissem ajuda.",
+    story: [
+      "Elara sempre soube que as árvores falavam, mas nunca esperou que elas pedissem ajuda. Uma praga sombria está devorando a Floresta Ancestral.",
+      "Armada apenas com um cajado de carvalho e sua coragem, ela parte em busca da Nascente de Cristal, o único artefato capaz de purificar a terra.",
+      "No caminho, ela encontra aliados improváveis: um lobo de prata e um espírito do vento exilado. Juntos, eles enfrentarão os guardiões corrompidos da floresta."
+    ].join("\n\n"),
+    image: "https://picsum.photos/seed/book10/200/300"
+  },
+  {
+    id: 11,
+    title: "O Último Trem",
+    author: "Marcos Vinícius",
+    publicationDate: "2018",
+    synopsis: "O Expresso da Meia-Noite partiu de Londres com 100 passageiros. Chegou a Edimburgo com 99.",
+    story: [
+      "O Expresso da Meia-Noite partiu de Londres com 100 passageiros. Chegou a Edimburgo com 99. Ninguém viu o Sr. Blackwood desaparecer.",
+      "O detetive aposentado Arthur Pendelton, que estava a bordo por acaso, decide investigar. Cada passageiro no vagão de primeira classe tem um segredo.",
+      "Enquanto a neve bloqueia os trilhos e o trem para no meio do nada, Arthur percebe que o assassino ainda está entre eles, e ele pode ser a próxima vítima."
+    ].join("\n\n"),
+    image: "https://picsum.photos/seed/book11/200/300"
+  },
+  {
+    id: 12,
+    title: "Além do Horizonte",
+    author: "Camila Rocha",
+    publicationDate: "2020",
+    synopsis: "Marina passou a vida inteira olhando para o mar, sonhando com o que havia além do horizonte.",
+    story: [
+      "Marina passou a vida inteira olhando para o mar, sonhando com o que havia além do horizonte. Um dia, uma garrafa com um mapa antigo chega à praia.",
+      "O mapa aponta para a mítica Ilha das Estrelas Cadentes. Determinada, ela conserta o velho barco de seu avô e zarpa rumo ao desconhecido.",
+      "Enfrentando tempestades furiosas e criaturas marinhas lendárias, Marina descobre que a verdadeira jornada não é sobre o destino, mas sobre quem ela se torna no caminho."
+    ].join("\n\n"),
+    image: "https://picsum.photos/seed/book12/200/300"
   }
 ];
 
@@ -255,12 +334,22 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState('E-books');
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [detailedBook, setDetailedBook] = useState<Book | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const [view, setView] = useState<'home' | 'shelf' | 'write' | 'profile'>('home');
+  const [view, setView] = useState<'home' | 'shelf' | 'write' | 'profile' | 'settings'>('home');
   
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
+
+  // Settings State
+  const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>(() => {
+    return (localStorage.getItem('book-fontsize') as 'small' | 'medium' | 'large') || 'medium';
+  });
+  const [notifications, setNotifications] = useState<boolean>(() => {
+    return localStorage.getItem('book-notifications') !== 'false';
+  });
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   // Reviews State
   const [showReviews, setShowReviews] = useState(false);
@@ -280,6 +369,14 @@ export default function App() {
     localStorage.setItem('book-reviews', JSON.stringify(reviews));
   }, [reviews]);
 
+  useEffect(() => {
+    localStorage.setItem('book-fontsize', fontSize);
+  }, [fontSize]);
+
+  useEffect(() => {
+    localStorage.setItem('book-notifications', String(notifications));
+  }, [notifications]);
+
   // Profile state
   const [profile, setProfile] = useState<UserProfile>({
     name: 'Cleber Algusto',
@@ -291,16 +388,26 @@ export default function App() {
 
   // Form state for new book
   const [newTitle, setNewTitle] = useState('');
+  const [newAuthor, setNewAuthor] = useState('');
+  const [newPublicationDate, setNewPublicationDate] = useState('');
+  const [newSynopsis, setNewSynopsis] = useState('');
   const [newImage, setNewImage] = useState('');
   const [writePages, setWritePages] = useState<string[]>(['']);
   const [currentWritePage, setCurrentWritePage] = useState(0);
 
   const handleBookClick = (book: Book) => {
-    setSelectedBook(book);
-    setCurrentPage(bookProgress[book.id] || 0);
-    setShowReviews(false);
-    setNewRating(0);
-    setNewReviewComment('');
+    setDetailedBook(book);
+  };
+
+  const handleStartReading = () => {
+    if (detailedBook) {
+      setSelectedBook(detailedBook);
+      setCurrentPage(bookProgress[detailedBook.id] || 0);
+      setShowReviews(false);
+      setNewRating(0);
+      setNewReviewComment('');
+      setDetailedBook(null);
+    }
   };
 
   const handlePageChange = (newPage: number) => {
@@ -343,12 +450,18 @@ export default function App() {
     const newBook: Book = {
       id: Date.now(),
       title: newTitle,
+      author: newAuthor || profile.name,
+      publicationDate: newPublicationDate || new Date().getFullYear().toString(),
+      synopsis: newSynopsis,
       story: writePages.filter(p => p.trim()).join('\n\n'),
       image: newImage || `https://picsum.photos/seed/${Date.now()}/200/300`
     };
 
     setBooks([newBook, ...books]);
     setNewTitle('');
+    setNewAuthor('');
+    setNewPublicationDate('');
+    setNewSynopsis('');
     setWritePages(['']);
     setCurrentWritePage(0);
     setNewImage('');
@@ -562,6 +675,40 @@ export default function App() {
               />
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Autor (Opcional)</label>
+                <input
+                  type="text"
+                  value={newAuthor}
+                  onChange={(e) => setNewAuthor(e.target.value)}
+                  placeholder={profile.name}
+                  className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:border-blue-600 outline-none transition-all font-sans"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Ano (Opcional)</label>
+                <input
+                  type="text"
+                  value={newPublicationDate}
+                  onChange={(e) => setNewPublicationDate(e.target.value)}
+                  placeholder={new Date().getFullYear().toString()}
+                  className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:border-blue-600 outline-none transition-all font-sans"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Sinopse (Opcional)</label>
+              <textarea
+                value={newSynopsis}
+                onChange={(e) => setNewSynopsis(e.target.value)}
+                placeholder="Um breve resumo da história..."
+                rows={3}
+                className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:border-blue-600 outline-none transition-all font-sans resize-none"
+              />
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">URL da Capa (Opcional)</label>
               <div className="flex space-x-2">
@@ -657,14 +804,19 @@ export default function App() {
           </form>
 
         </main>
-      ) : (
+      ) : view === 'profile' ? (
         /* Profile View */
         <main className="p-6">
-          <div className="flex items-center mb-8">
-            <button onClick={() => setView('home')} className="mr-4 p-1 rounded-full hover:bg-gray-100">
-              <ChevronLeft className="w-6 h-6" />
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center">
+              <button onClick={() => setView('home')} className="mr-4 p-1 rounded-full hover:bg-gray-100">
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <h2 className="text-xl font-bold font-sans">Perfil</h2>
+            </div>
+            <button onClick={() => setView('settings')} className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
+              <Settings className="w-6 h-6" />
             </button>
-            <h2 className="text-xl font-bold font-sans">Perfil</h2>
           </div>
 
           <div className="flex flex-col items-center mb-8">
@@ -739,7 +891,124 @@ export default function App() {
             </div>
           </div>
         </main>
+      ) : (
+        /* Settings View */
+        <main className="p-6">
+          <div className="flex items-center mb-8">
+            <button onClick={() => setView('profile')} className="mr-4 p-1 rounded-full hover:bg-gray-100">
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <h2 className="text-xl font-bold font-sans">Configurações</h2>
+          </div>
+
+          <div className="space-y-6">
+            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+              <h3 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-widest">Leitura</h3>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-gray-700 font-medium text-sm">Tamanho da Fonte</span>
+                <select 
+                  value={fontSize} 
+                  onChange={(e) => setFontSize(e.target.value as any)}
+                  className="bg-gray-50 border border-gray-200 text-gray-700 rounded-lg px-3 py-1 outline-none focus:border-blue-500 text-sm"
+                >
+                  <option value="small">Pequena</option>
+                  <option value="medium">Média</option>
+                  <option value="large">Grande</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+              <h3 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-widest">Geral</h3>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-gray-700 font-medium text-sm">Notificações</span>
+                <button 
+                  onClick={() => setNotifications(!notifications)}
+                  className={`w-12 h-6 rounded-full transition-colors relative ${notifications ? 'bg-blue-600' : 'bg-gray-300'}`}
+                >
+                  <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${notifications ? 'left-7' : 'left-1'}`} />
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+              <h3 className="text-sm font-bold text-red-600 mb-4 uppercase tracking-widest">Zona de Perigo</h3>
+              <button 
+                onClick={() => {
+                  if (showClearConfirm) {
+                    localStorage.clear();
+                    window.location.reload();
+                  } else {
+                    setShowClearConfirm(true);
+                    setTimeout(() => setShowClearConfirm(false), 3000);
+                  }
+                }}
+                className={`w-full py-3 rounded-xl font-bold transition-colors text-sm ${
+                  showClearConfirm 
+                    ? 'bg-red-600 text-white hover:bg-red-700' 
+                    : 'bg-red-50 text-red-600 hover:bg-red-100'
+                }`}
+              >
+                {showClearConfirm ? 'Clique novamente para confirmar' : 'Limpar Todos os Dados'}
+              </button>
+            </div>
+          </div>
+        </main>
       )}
+
+      {/* Detailed Book Modal */}
+      <AnimatePresence>
+        {detailedBook && !selectedBook && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed inset-0 z-40 bg-white flex flex-col max-w-md mx-auto"
+          >
+            <div className="relative h-72 shrink-0">
+              <img src={detailedBook.image} alt={detailedBook.title} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              <button onClick={() => setDetailedBook(null)} className="absolute top-4 left-4 p-2 bg-black/20 backdrop-blur-md rounded-full text-white hover:bg-black/40 transition-colors">
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-6 flex-1 overflow-y-auto -mt-6 bg-white rounded-t-3xl relative z-10">
+              <h2 className="text-2xl font-bold font-sans mb-1 text-gray-900">{detailedBook.title}</h2>
+              <p className="text-gray-500 text-sm mb-6 font-medium">
+                {detailedBook.author || 'Autor Desconhecido'} • {detailedBook.publicationDate || 'Data Desconhecida'}
+              </p>
+              
+              <div className="flex items-center space-x-4 mb-8 bg-gray-50 p-4 rounded-2xl">
+                <div className="flex items-center space-x-1.5">
+                  <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                  <span className="font-bold text-gray-900">{
+                    reviews[detailedBook.id]?.length > 0 
+                      ? (reviews[detailedBook.id].reduce((sum, r) => sum + r.rating, 0) / reviews[detailedBook.id].length).toFixed(1)
+                      : 'N/A'
+                  }</span>
+                </div>
+                <div className="w-px h-6 bg-gray-200" />
+                <div className="flex flex-col">
+                  <span className="text-gray-900 font-bold">{getPages(detailedBook.story).length}</span>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Páginas</span>
+                </div>
+              </div>
+
+              <h3 className="font-bold text-lg mb-3 text-gray-900">Sinopse</h3>
+              <p className="text-gray-600 leading-relaxed mb-8 text-sm">
+                {detailedBook.synopsis || 'Nenhuma sinopse disponível para este livro.'}
+              </p>
+
+              <button 
+                onClick={handleStartReading}
+                className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold text-lg shadow-xl shadow-blue-100 hover:bg-blue-700 transition-colors active:scale-[0.98]"
+              >
+                {bookProgress[detailedBook.id] ? 'Continuar Lendo' : 'Começar a Ler'}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Reading Modal */}
       <AnimatePresence>
@@ -840,7 +1109,9 @@ export default function App() {
                     </div>
                   )}
                   
-                  <p className="text-gray-800 leading-relaxed text-2xl first-letter:text-5xl first-letter:font-bold first-letter:mr-3 first-letter:float-left">
+                  <p className={`text-gray-800 leading-relaxed first-letter:font-bold first-letter:mr-3 first-letter:float-left ${
+                    fontSize === 'small' ? 'text-lg first-letter:text-3xl' : fontSize === 'large' ? 'text-3xl first-letter:text-6xl' : 'text-2xl first-letter:text-5xl'
+                  }`}>
                     {getPages(selectedBook.story)[currentPage]}
                   </p>
                 </motion.div>
