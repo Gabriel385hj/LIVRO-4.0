@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, BookOpen, User, PenLine, Plus, X, Image as ImageIcon, Save, Edit2, Trash2, Library, Search, Star, Settings } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ChevronLeft, ChevronRight, BookOpen, User, PenLine, Plus, X, Image as ImageIcon, Save, Edit2, Trash2, Library, Search, Star, Settings, Music } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface Book {
@@ -349,6 +349,9 @@ export default function App() {
   const [notifications, setNotifications] = useState<boolean>(() => {
     return localStorage.getItem('book-notifications') !== 'false';
   });
+  const [musicEnabled, setMusicEnabled] = useState<boolean>(() => {
+    return localStorage.getItem('book-music') === 'true';
+  });
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   // Reviews State
@@ -376,6 +379,42 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('book-notifications', String(notifications));
   }, [notifications]);
+
+  useEffect(() => {
+    localStorage.setItem('book-music', String(musicEnabled));
+  }, [musicEnabled]);
+
+  const menuAudioRef = useRef<HTMLAudioElement | null>(null);
+  const readingAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (!menuAudioRef.current) {
+      menuAudioRef.current = new Audio('https://upload.wikimedia.org/wikipedia/commons/3/34/Brahms_-_Waltz_in_A_flat_major%2C_Op._39_No._15.ogg');
+      menuAudioRef.current.loop = true;
+      menuAudioRef.current.volume = 0.2;
+    }
+    if (!readingAudioRef.current) {
+      readingAudioRef.current = new Audio('https://upload.wikimedia.org/wikipedia/commons/b/b5/Gymnop%C3%A9die_No._1.ogg');
+      readingAudioRef.current.loop = true;
+      readingAudioRef.current.volume = 0.2;
+    }
+
+    const menuAudio = menuAudioRef.current;
+    const readingAudio = readingAudioRef.current;
+
+    if (musicEnabled) {
+      if (selectedBook) {
+        menuAudio.pause();
+        readingAudio.play().catch(e => console.log("Audio play failed:", e));
+      } else {
+        readingAudio.pause();
+        menuAudio.play().catch(e => console.log("Audio play failed:", e));
+      }
+    } else {
+      menuAudio.pause();
+      readingAudio.pause();
+    }
+  }, [musicEnabled, selectedBook]);
 
   // Profile state
   const [profile, setProfile] = useState<UserProfile>({
@@ -927,6 +966,18 @@ export default function App() {
                   className={`w-12 h-6 rounded-full transition-colors relative ${notifications ? 'bg-blue-600' : 'bg-gray-300'}`}
                 >
                   <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${notifications ? 'left-7' : 'left-1'}`} />
+                </button>
+              </div>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-gray-700 font-medium text-sm flex items-center space-x-2">
+                  <Music className="w-4 h-4 text-gray-500" />
+                  <span>Música de Fundo</span>
+                </span>
+                <button 
+                  onClick={() => setMusicEnabled(!musicEnabled)}
+                  className={`w-12 h-6 rounded-full transition-colors relative ${musicEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}
+                >
+                  <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${musicEnabled ? 'left-7' : 'left-1'}`} />
                 </button>
               </div>
             </div>
