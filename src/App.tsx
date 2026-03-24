@@ -521,13 +521,41 @@ export default function App() {
   };
 
   const generateCertificate = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(24);
-    doc.text('Certificado de Escritor', 105, 50, { align: 'center' });
+    const doc = new jsPDF({ orientation: 'landscape' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    // Border
+    doc.setDrawColor(37, 99, 235); // Blue-600
+    doc.setLineWidth(5);
+    doc.rect(10, 10, pageWidth - 20, pageHeight - 20);
+
+    // Title
+    doc.setFontSize(30);
+    doc.setTextColor(30, 64, 175); // Blue-800
+    doc.text('Certificado de Mérito Literário', pageWidth / 2, 40, { align: 'center' });
+
+    // Body
     doc.setFontSize(18);
-    doc.text(`Certificamos que ${profile.name}`, 105, 80, { align: 'center' });
-    doc.text('escreveu 10 livros incríveis!', 105, 100, { align: 'center' });
-    doc.save('certificado.pdf');
+    doc.setTextColor(0, 0, 0);
+    doc.text('Concedido a:', pageWidth / 2, 70, { align: 'center' });
+
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text(profile.name, pageWidth / 2, 90, { align: 'center' });
+
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Por sua dedicação e criatividade na escrita de histórias memoráveis.', pageWidth / 2, 120, { align: 'center' });
+    doc.text('Este certificado reconhece sua valiosa contribuição para o universo das letras.', pageWidth / 2, 135, { align: 'center' });
+
+    // Date & Signature
+    doc.setFontSize(12);
+    doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 50, 170);
+    doc.text('________________________', pageWidth - 50, 170, { align: 'center' });
+    doc.text('Assinatura', pageWidth - 50, 180, { align: 'center' });
+
+    doc.save('certificado_escritor.pdf');
   };
 
   const writtenBooks = books.filter(b => b.author === profile.name);
@@ -967,15 +995,13 @@ export default function App() {
               <span className="block text-blue-600 font-black text-2xl">{writtenBooks.length}</span>
               <span className="text-[10px] uppercase font-bold text-blue-400 tracking-widest">Livros Escritos</span>
             </div>
-            {writtenBooks.length >= 10 && (
-              <button 
+            <button 
                 onClick={generateCertificate}
                 className="bg-emerald-600 text-white p-4 rounded-2xl col-span-2 font-bold text-sm flex items-center justify-center space-x-2 hover:bg-emerald-700 transition-colors"
               >
                 <Library className="w-4 h-4" />
                 <span>Baixar Certificado de Escritor</span>
               </button>
-            )}
           </div>
         </main>
       ) : (
