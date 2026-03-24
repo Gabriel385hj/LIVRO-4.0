@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, BookOpen, User, PenLine, Plus, X, Image as ImageIcon, Save, Edit2, Trash2, Library, Search, Star, Settings, Music } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { jsPDF } from 'jspdf';
 
 interface Book {
   id: number;
@@ -316,6 +317,16 @@ const Section = ({
   </div>
 );
 
+const getAudio = (key: string, url: string) => {
+  if (!(window as any)[key]) {
+    const audio = new Audio(url);
+    audio.loop = true;
+    audio.volume = 0.2;
+    (window as any)[key] = audio;
+  }
+  return (window as any)[key] as HTMLAudioElement;
+};
+
 export default function App() {
   const [books, setBooks] = useState<Book[]>(() => {
     const savedBooks = localStorage.getItem('my-books');
@@ -354,6 +365,11 @@ export default function App() {
   });
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
+  // Theme State
+  const [bgColor, setBgColor] = useState(() => localStorage.getItem('book-bgcolor') || '#ffffff');
+  const [textColor, setTextColor] = useState(() => localStorage.getItem('book-textcolor') || '#111827');
+  const [appFont, setAppFont] = useState(() => localStorage.getItem('book-appfont') || 'font-sans');
+
   // Reviews State
   const [showReviews, setShowReviews] = useState(false);
   const [newRating, setNewRating] = useState(0);
@@ -384,23 +400,15 @@ export default function App() {
     localStorage.setItem('book-music', String(musicEnabled));
   }, [musicEnabled]);
 
-  const menuAudioRef = useRef<HTMLAudioElement | null>(null);
-  const readingAudioRef = useRef<HTMLAudioElement | null>(null);
+  useEffect(() => {
+    localStorage.setItem('book-bgcolor', bgColor);
+    localStorage.setItem('book-textcolor', textColor);
+    localStorage.setItem('book-appfont', appFont);
+  }, [bgColor, textColor, appFont]);
 
   useEffect(() => {
-    if (!menuAudioRef.current) {
-      menuAudioRef.current = new Audio('https://upload.wikimedia.org/wikipedia/commons/3/34/Brahms_-_Waltz_in_A_flat_major%2C_Op._39_No._15.ogg');
-      menuAudioRef.current.loop = true;
-      menuAudioRef.current.volume = 0.2;
-    }
-    if (!readingAudioRef.current) {
-      readingAudioRef.current = new Audio('https://upload.wikimedia.org/wikipedia/commons/b/b5/Gymnop%C3%A9die_No._1.ogg');
-      readingAudioRef.current.loop = true;
-      readingAudioRef.current.volume = 0.2;
-    }
-
-    const menuAudio = menuAudioRef.current;
-    const readingAudio = readingAudioRef.current;
+    const menuAudio = getAudio('menuAudio', 'https://upload.wikimedia.org/wikipedia/commons/3/34/Brahms_-_Waltz_in_A_flat_major%2C_Op._39_No._15.ogg');
+    const readingAudio = getAudio('readingAudio', 'https://upload.wikimedia.org/wikipedia/commons/b/b5/Gymnop%C3%A9die_No._1.ogg');
 
     if (musicEnabled) {
       if (selectedBook) {
@@ -512,6 +520,18 @@ export default function App() {
     setIsEditingProfile(false);
   };
 
+  const generateCertificate = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(24);
+    doc.text('Certificado de Escritor', 105, 50, { align: 'center' });
+    doc.setFontSize(18);
+    doc.text(`Certificamos que ${profile.name}`, 105, 80, { align: 'center' });
+    doc.text('escreveu 10 livros incríveis!', 105, 100, { align: 'center' });
+    doc.save('certificado.pdf');
+  };
+
+  const writtenBooks = books.filter(b => b.author === profile.name);
+
   const handleAddReview = () => {
     if (!selectedBook || newRating === 0 || !newReviewComment.trim()) return;
 
@@ -548,7 +568,26 @@ export default function App() {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
   return (
-    <div className="min-h-screen bg-white font-sans text-gray-900 max-w-md mx-auto relative pb-20">
+    <div 
+      className={`min-h-screen max-w-md mx-auto relative pb-20 ${appFont}`}
+      style={{ 
+        '--app-bg': bgColor, 
+        '--app-text': textColor,
+        '--app-muted': textColor + '99',
+        '--app-border': textColor + '22',
+        '--app-card': textColor + '0A',
+        backgroundColor: 'var(--app-bg)',
+        color: 'var(--app-text)'
+      } as React.CSSProperties}
+    >
+      <style>{`
+        .bg-white { background-color: var(--app-bg) !important; }
+        .bg-gray-50, .bg-gray-100 { background-color: var(--app-card) !important; }
+        .text-gray-900, .text-gray-800, .text-gray-700 { color: var(--app-text) !important; }
+        .text-gray-600, .text-gray-500, .text-gray-400 { color: var(--app-muted) !important; }
+        .border-gray-100, .border-gray-200 { border-color: var(--app-border) !important; }
+      `}</style>
+      
       {/* Header */}
       <header className="pt-6 px-4 pb-4 sticky top-0 bg-white z-10 flex items-center justify-between border-b border-gray-100">
         <h1 className="text-2xl font-black text-blue-600 tracking-tighter italic">Livros</h1>
@@ -925,9 +964,18 @@ export default function App() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-blue-50 p-4 rounded-2xl col-span-2">
-              <span className="block text-blue-600 font-black text-2xl">{books.length}</span>
+              <span className="block text-blue-600 font-black text-2xl">{writtenBooks.length}</span>
               <span className="text-[10px] uppercase font-bold text-blue-400 tracking-widest">Livros Escritos</span>
             </div>
+            {writtenBooks.length >= 10 && (
+              <button 
+                onClick={generateCertificate}
+                className="bg-emerald-600 text-white p-4 rounded-2xl col-span-2 font-bold text-sm flex items-center justify-center space-x-2 hover:bg-emerald-700 transition-colors"
+              >
+                <Library className="w-4 h-4" />
+                <span>Baixar Certificado de Escritor</span>
+              </button>
+            )}
           </div>
         </main>
       ) : (
@@ -953,6 +1001,40 @@ export default function App() {
                   <option value="small">Pequena</option>
                   <option value="medium">Média</option>
                   <option value="large">Grande</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+              <h3 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-widest">Aparência</h3>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-gray-700 font-medium text-sm">Cor de Fundo</span>
+                <input 
+                  type="color" 
+                  value={bgColor} 
+                  onChange={(e) => setBgColor(e.target.value)}
+                  className="w-8 h-8 rounded cursor-pointer border-0 p-0"
+                />
+              </div>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-gray-700 font-medium text-sm">Cor da Fonte</span>
+                <input 
+                  type="color" 
+                  value={textColor} 
+                  onChange={(e) => setTextColor(e.target.value)}
+                  className="w-8 h-8 rounded cursor-pointer border-0 p-0"
+                />
+              </div>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-gray-700 font-medium text-sm">Fonte do Aplicativo</span>
+                <select 
+                  value={appFont} 
+                  onChange={(e) => setAppFont(e.target.value)}
+                  className="bg-gray-50 border border-gray-200 text-gray-700 rounded-lg px-3 py-1 outline-none focus:border-blue-500 text-sm"
+                >
+                  <option value="font-sans">Sans-serif</option>
+                  <option value="font-serif">Serif</option>
+                  <option value="font-mono">Monospace</option>
                 </select>
               </div>
             </div>
